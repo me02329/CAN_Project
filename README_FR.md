@@ -16,8 +16,7 @@ Vous pouvez installer les dépendances nécessaires, cloner le dépôt GitHub d'
 ```bash
 sudo apt-get install libsdl2-dev libsdl2-image-dev can-utils  
 git clone https://github.com/zombieCraig/ICSim.git
-cd ICSim
-make
+cd ICSim/buildir/
 ```
 
 ### 2. Configuration de l'interface `vcan0`
