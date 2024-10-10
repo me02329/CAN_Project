@@ -3,15 +3,16 @@
 
 ## Introduction
 
-L'objectif est d'utiliser un simulateur CAN et des outils comme ICSim, `candump`, et `cansend` pour retrouver la commande spécifique qui ouvre une portière d'une voiture. Voici les étapes détaillées suivies pour accomplir cette tâche.
+L'objectif est d'utiliser un simulateur CAN et des outils comme ICSim, **`candump`**, et **`cansend`** pour retrouver la commande spécifique qui ouvre une portière d'une voiture. Voici les étapes détaillées suivies pour accomplir cette tâche.
 
 ## Étapes
 
 ### 1. Installation d'ICSim
 
-Pour commencer, il est nécessaire d'installer le simulateur ICSim. Ce dernier permet de simuler un bus CAN pour une voiture. 
+Pour commencer, il est nécessaire d'installer le simulateur **ICSim**. Ce dernier permet de simuler un bus CAN pour une voiture. 
 
 Vous pouvez installer les dépendances nécessaires, cloner le dépôt GitHub d'ICSim et suivre les instructions pour l'installer :
+
 ```bash
 sudo apt-get install libsdl2-dev libsdl2-image-dev can-utils  
 git clone https://github.com/zombieCraig/ICSim.git
@@ -21,7 +22,7 @@ make
 
 ### 2. Configuration de l'interface `vcan0`
 
-Avant de lancer le simulateur, il est important de configurer l'interface réseau virtuelle CAN (`vcan0`). Voici comment configurer l'interface :
+Avant de lancer le simulateur, il est important de configurer l'interface **réseau virtuelle CAN (`vcan0`)**. Voici comment configurer l'interface :
 
 ```bash
 sudo modprobe vcan
@@ -44,17 +45,15 @@ Le tableau de bord permet de visualiser l'état des portes, des phares, etc., ta
 
 ### 4. Lancer `cangen` pour générer du trafic
 
-Pour générer des messages aléatoires sur le bus CAN, utilisez l'outil `cangen`. Cette étape est importante pour obtenir un volume important de messages CAN, parmi lesquels se trouvera la commande qui ouvre la portière.
+Pour générer des messages aléatoires sur le bus CAN, utilisez l'outil **`cangen`**. Cette étape est importante pour obtenir un volume important de messages CAN, parmi lesquels se trouvera la commande qui ouvre la portière.
 
 ```bash
 cangen vcan0 
 ```
 
-Ici, l'option `-g 10` génère des messages à un intervalle de 10 ms.
-
 ### 5. Capturer le trafic CAN avec `candump`
 
-Ensuite, il est temps de capturer le trafic généré sur le bus CAN en utilisant `candump`. Cette commande va enregistrer tout le trafic dans un fichier log :
+Ensuite, il est temps de capturer le trafic généré sur le bus CAN en utilisant **`candump`**. Cette commande va enregistrer tout le trafic dans un fichier log :
 
 ```bash
 candump -l vcan0
@@ -69,7 +68,7 @@ Attendez que la portière de la voiture s'ouvre, puis stoppez la capture avec `C
 
 ### 6. Création d'un fichier de logs propre avec `awk`
 
-Avant de tester les commandes du fichier de log, il est utile de créer un fichier de logs propre, où seules les données CAN pertinentes sont conservées. Pour cela, j'ai utilisé la commande `awk` pour extraire les colonnes nécessaires (les colonnes 2 et 3) du fichier de capture généré par `candump` :
+Avant de tester les commandes du fichier de log, il est utile de créer un fichier de logs propre, où seules les données CAN pertinentes sont conservées. Pour cela, nous pouvons utiliser la commande `awk` pour extraire les colonnes nécessaires (les colonnes 2 et 3) du fichier de capture généré par `candump` :
 
 ```bash
 awk '{print $2, $3}' candump-2024-09-30_200034.log > /home/martial/Documents/can.log
@@ -81,48 +80,38 @@ Cela permet de simplifier le fichier de logs et de n'avoir que les informations 
 
 ### 7. Test des commandes avec un script Python
 
-Une fois le fichier de logs propre obtenu, j'ai utilisé un script Python pour envoyer les commandes CAN au simulateur et observer quand la portière s'ouvre. Le script envoie les commandes par lots de 10 avec une pause d'une seconde entre chaque lot.
+Une fois le fichier de logs propre obtenu, nous pouvons utiliser un script Python pour envoyer les commandes CAN au simulateur et observer quand la portière s'ouvre. Le script envoie les commandes par lots de 10 avec une pause d'une seconde entre chaque lot.
 
 Voici le script Python utilisé :
 
-![Capture d'écran 2024-10-10 201126](https://github.com/user-attachments/assets/270ec438-fd6f-488c-a83f-72295cd0ed28)
+![image](https://github.com/user-attachments/assets/b2a2f0ca-0af5-4f22-8e26-0f9fa2cd51b3)
 
+Ici, nous mettons en commentaire la fonction **Sleep()** afin d'exécuter toute les commandes à la suite. L'idée est d'estimer grossièrement où se situe la commande qui ouvre la portière de la voiture afin de réduire le nombre de lignes de logs dans le fichiers can.log. Nous n'avons donc pas besoin d'attendre entre les commandes.
 
-```python
-import subprocess
-import time
+### 8. Réduction du fichier log
 
-# Lecture des commandes depuis le fichier can.log
-with open('/home/martial/Documents/can.log', 'r') as f:
-    commands = [line.strip() for line in f.readlines()]
+À ce stade, le fichier de logs peut contenir un grand nombre de messages (environ 17 000). L'objectif est de réduire ce nombre à moins de 1 000 logs, tout en conservant les messages pertinents.
 
-def send_commands():
-    # Parcours des commandes par lots de 10
-    for i in range(0, len(commands), 10):
-        batch = commands[i:i+10]
-        
-        for command in batch:
-            # Séparation de la commande en arguments pour subprocess
-            cmd_list = command.split()
-            print(f"Executing command: {cmd_list}")
-            try:
-                # Exécution de la commande avec subprocess
-                subprocess.run(cmd_list, check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"An error occurred while executing the command: {e}")
-            except FileNotFoundError as e:
-                print(f"FileNotFoundError: {e}")
+Commencez par utiliser **wc -l** pour compter le nombre de lignes dans le fichier :
 
-        # Pause de 1 seconde entre chaque batch
-        time.sleep(1)
+```bash
+wc -l candump.log
+```
+Ensuite, utilisez **head** pour ne garder que les premières lignes, en fonction de l'instant où la portière s'est ouverte (pour réduire progressivement le fichier) :
 
-if __name__ == "__main__":
-    send_commands()
+```bash
+head -n 1000 can.log > can2.log
 ```
 
-Le script utilise `subprocess.run()` pour exécuter chaque commande du fichier de logs. Le traitement est fait par lots de 10 commandes, avec une pause d'une seconde entre chaque lot pour observer à quel moment la portière s'ouvre. Si une erreur survient, elle est capturée et affichée dans la console.
+### 8. Envoie des commandes 10 par 10
 
-Lorsque la portière s'ouvre, j'ai interrompu l'exécution avec `Ctrl+C` pour identifier précisément quelle commande a causé l'ouverture.
+Une fois que nous avons un fichier de log qui contient un nombre de log résonnable et la commande ouvrant la portière, nous pouvons réexécuter le script python en ajoutant cette fois la fonction Sleep().
+
+![image](https://github.com/user-attachments/assets/37cc6e40-f088-48c7-b0b8-5b1926a94ad7)
+
+Le script utilise **`subprocess.run()`** pour exécuter chaque commande du fichier de logs. Cette fois-ci, le traitement est fait par lots de 10 commandes, avec une pause d'une seconde entre chaque lot pour observer à quel moment la portière s'ouvre. Si une erreur survient, elle est capturée et affichée dans la console.
+
+Lorsque la portière s'ouvre, nous pouvons interrompre l'exécution avec `Ctrl+C` pour identifier précisément quelle commande a causé l'ouverture.
 
 ![Capture d'écran 2024-10-01 142536](https://github.com/user-attachments/assets/a71bcc6b-6c92-447b-adbd-28be81345793)
 
@@ -133,4 +122,8 @@ Maintenant que nous savons que la commande qui ordonne a la portière de s'ouvri
 
 ### Conclusion
 
-En suivant ces étapes, il est possible de retrouver la commande spécifique qui ouvre la portière d'une voiture en utilisant le simulateur CAN et des outils comme ICSim, `candump`, et `cansend`.
+Ce projet a permis d'explorer le fonctionnement des bus CAN et la manière de capturer et analyser les messages CAN pour retrouver des commandes spécifiques. Grâce à l'utilisation d'outils comme ICSim, candump, et cansend, il a été possible d'isoler la commande ouvrant la portière d'une voiture virtuelle.
+
+En suivant une approche méthodique, du nettoyage des logs avec awk à l'utilisation d'un script Python pour automatiser les tests, nous avons pu efficacement réduire le nombre de messages à traiter et identifier la commande cible. Ce type d'analyse est essentiel dans le domaine de l'ingénierie des systèmes embarqués, notamment dans le contexte automobile.
+
+Ce processus met en lumière l'importance de la rigueur dans l'analyse des données CAN et ouvre la voie à des applications plus complexes, comme la rétro-ingénierie des systèmes embarqués ou encore la sécurisation des communications sur les bus CAN. Le savoir-faire acquis ici peut aussi être étendu à d'autres systèmes de transport ou d'automatisation industrielle utilisant des protocoles similaires.
