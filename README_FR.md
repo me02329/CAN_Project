@@ -107,7 +107,7 @@ head -n 1000 can.log > can2.log
 
 Une fois que nous avons un fichier de log qui contient un nombre de log résonnable et la commande ouvrant la portière, nous pouvons réexécuter le script python en ajoutant cette fois la fonction Sleep().
 
-![image](https://github.com/user-attachments/assets/37cc6e40-f088-48c7-b0b8-5b1926a94ad7)
+![image](https://github.com/user-attachments/assets/76537d59-bda5-49d6-8818-c478386c7e34)
 
 Le script utilise **`subprocess.run()`** pour exécuter chaque commande du fichier de logs. Cette fois-ci, le traitement est fait par lots de 10 commandes, avec une pause d'une seconde entre chaque lot pour observer à quel moment la portière s'ouvre. Si une erreur survient, elle est capturée et affichée dans la console.
 
