@@ -103,6 +103,8 @@ Ensuite, utilisez **head** pour ne garder que les premières lignes, en fonction
 head -n 1000 can.log > can2.log
 ```
 
+L'idée est d'éxcuter le script python et de nettoyer le fichier de log autant que possible. Nous pouvons donc répeter l'action autant de fois que nous le voulons (ici 2 fois).
+
 ### 8. Envoie des commandes 10 par 10
 
 Une fois que nous avons un fichier de log qui contient un nombre de log résonnable et la commande ouvrant la portière, nous pouvons réexécuter le script python en ajoutant cette fois la fonction Sleep().
