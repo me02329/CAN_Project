@@ -85,7 +85,7 @@ Une fois le fichier de logs propre obtenu, j'ai utilisé un script Python pour e
 
 Voici le script Python utilisé :
 
-![Capture d'écran 2024-10-10 195748](https://github.com/user-attachments/assets/6307098b-9d9b-4e66-82b0-917a1f75557e)
+![Capture d'écran 2024-10-10 201126](https://github.com/user-attachments/assets/270ec438-fd6f-488c-a83f-72295cd0ed28)
 
 
 ```python
